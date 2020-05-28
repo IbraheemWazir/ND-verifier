@@ -4,8 +4,12 @@ import Types
 import Helper
 import Data.Maybe
 
+isNot :: Exp -> Bool
+isNot (UnApp Not e) = True
+isNot _             = False
+
 expTrue :: Exp -> Env -> Bool
-expTrue exp env = isNothing $ lookupRecent exp env
+expTrue exp env = isJust $ lookupRecent exp env
 
 addToEnv :: Env -> [Exp] -> Env
 addToEnv env [] = env
@@ -68,7 +72,7 @@ andIntro exp1 exp2 env@(b:bs)
 andApply :: Exp -> Exp -> Env -> Env
 andApply exp1 exp2 [] = [] -- shouldn't be reachable
 andApply exp1 exp2 (b:bs) 
-	= ((exp1, None):(exp2, None):b):bs
+    = ((exp1, None):(exp2, None):b):bs
 
 -- orIntro
 -- p true -> p or q true
@@ -165,4 +169,14 @@ iffApply p q env = ifApply p q (ifApply q p env)
 notApply :: Exp -> Env -> Env
 notApply (UnApp Not exp) env@(b:bs) 
     | expTrue exp env = ((TF "False", None):b):bs
-    | otherwise       = env   
+    | otherwise       = env  
+
+
+falseElim :: Env -> Env
+falseElim env@(a:b:bs) 
+    | el == Ass && isNot exp = (a:((e, None):b):bs)
+    | el == Ass              = (a:(((UnApp Not exp),None):b):bs)
+    where 
+    (exp, el)     = last a
+    (UnApp Not e) = exp
+    

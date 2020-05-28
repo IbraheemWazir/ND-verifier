@@ -26,6 +26,7 @@ opStrs  = listify opChars
 invalidChars = ['.', ',']
 eolChar = [';']
 parChars = ['(', ')']
+parStrs = listify parChars
 specialChars = eqChars ++ opChars ++ invalidChars ++ eolChar ++ parChars
 specialChars' = eqChars ++ opChars ++ invalidChars ++ eolChar
 specialStrs' = [">=", "<=", "<->", "->"]

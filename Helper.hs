@@ -3,6 +3,8 @@ module Helper where
 import Data.Maybe
 import Text.Read
 
+
+-- take each element in a list and make it a list itself
 listify :: [a] -> [[a]]
 listify = map (\x -> [x])
 
@@ -33,8 +35,14 @@ lookupRecent key (l:ls)
     where 
     lMaybe = lookup key l 
 
+-- finds all the values corresponding to a certain key
 findAll :: Eq a => a -> [(a, b)] -> [b]
 findAll x xs = [y | (x, y) <- xs]
 
+-- returns a list of all keys in a list of pairs
 getKeys :: [(a,b)] -> [a]
 getKeys = map (\(x,y) -> x)
+
+-- checks whether a list of lists contains only empty lists
+notOnlyEmpty :: [[a]] -> Bool
+notOnlyEmpty xs = not $ null [x | x<-xs, not $ null x] 

@@ -20,7 +20,7 @@ workoutExp _ _                                = Nothing
 
 parse :: [String] -> Maybe (Exp, Command)
 parse words 
-    = parse' words [] [] []
+    = parse' (filter (not . null) words) [] [] []
     where 
     parse' :: [String] -> [Exp] -> [String] -> [Command] -> Maybe (Exp, Command)
     parse' [";"] [x] [] [com] = Just (x, com)
@@ -30,6 +30,7 @@ parse words
                                         else parse' [";"] (fromJust w) os coms 
 	where 
 	w = workoutExp expStack o
+    parse' [_] _ _ _ = Nothing
     parse' ("(" :xs) expStack opStack coms 
         = parse' xs expStack ("(":opStack) coms
     parse' (")" : xs) expStack [] _ = Nothing
@@ -63,13 +64,13 @@ parse words
 
 parseLines :: [[String]] -> Maybe [(Exp, Command)]
 parseLines lines 
-    = parseLines' lines []
+    = parseLines' lines  []
     where
     parseLines' :: [[String]] -> [(Exp, Command)] -> Maybe [(Exp, Command)]
     parseLines' [] es = Just es
     parseLines' (x:xs) es 
         = if isNothing parsedStr 
           then Nothing
-          else parseLines' xs ((fromJust parsedStr):es) 
+          else parseLines' xs (es ++ [fromJust parsedStr]) 
         where
         parsedStr = parse x

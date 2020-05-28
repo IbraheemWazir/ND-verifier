@@ -1,0 +1,9 @@
+given p -> r;
+given p or q;
+given t and (not q);
+
+	ass q;
+	False;
+	r;
+q -> r;
+r;
