@@ -4,13 +4,16 @@ import Types
 import Helper
 import Data.Maybe
 
+-- returns true if the expression is of the form (not p)
 isNot :: Exp -> Bool
 isNot (UnApp Not e) = True
 isNot _             = False
 
+-- returns true if the expression is in the environment
 expTrue :: Exp -> Env -> Bool
 expTrue exp env = isJust $ lookupRecent exp env
 
+-- adds all expressions in a list to the most recent part of the environment
 addToEnv :: Env -> [Exp] -> Env
 addToEnv env [] = env
 addToEnv (b:bs) (e:es)
@@ -21,6 +24,8 @@ addToEnv (b:bs) (e:es)
 getCommand :: Exp -> Env -> Command
 getCommand exp env = fromJust $ lookupRecent exp env
 findOrs :: Exp -> Env -> [Exp]
+
+-- for input p, returns a list of expressions [q] s.t. (p  or q)
 findOrs exp env
     = findOrs' exp env []
     where 
@@ -32,6 +37,8 @@ findOrs exp env
     findOrs' exp ([]:bs) es                       = findOrs' exp bs es
     findOrs' exp ((e:b):bs)  es                   = findOrs' exp (b:bs) es 
     findOrs' exp [] es                            = es
+
+-- for input p, returns a list of expressions [q] s.t. p -> q 
 findIfs :: Exp -> Env -> [Exp]
 findIfs exp env
     = findIfs' exp env []
@@ -44,7 +51,7 @@ findIfs exp env
     findIfs' exp ((e:b):bs)  es                   = findIfs' exp (b:bs) es
     findIfs' exp [] es                            = es
 
--- for input p, returns true if not p exists in the environment, else false
+-- for input e, returns true if not e exists in the environment
 hasNot :: Exp -> Env -> Bool
 hasNot e [] = False
 hasNot e (((UnApp Not exp, _):b):bs) 
@@ -53,7 +60,7 @@ hasNot e (((UnApp Not exp, _):b):bs)
 hasNot e ([]:bs) = hasNot e bs
 hasNot e ((a:b):bs) = hasNot e (b:bs)  
 
--- for input 
+
 -- andIntro 
 -- p true and q true -> (p and q) true
 andIntro :: Exp -> Exp -> Env -> Maybe Env
@@ -147,7 +154,8 @@ ifIntro exp1 exp2 env@(a:b:bs)
     cond'  = keyExists exp1 a
     cond'' = keyExists exp2 a  
     cond = cond' && cond'' && (getCommand exp1 env) == Ass
-
+-- <-> Intro 
+-- p -> q and q -> p => p <-> q
 iffIntro :: Exp -> Exp -> Env -> Maybe Env
 iffIntro _ _ []  = Nothing
 iffIntro _ _ [_] = Nothing
@@ -158,12 +166,17 @@ iffIntro exp1 exp2 env
     where
     env' = ifIntro exp1 exp2 env 
 
+-- ifElim
+-- p -> q and p => q
 ifApply :: Exp -> Exp -> Env -> Env
 ifApply _ _ [] = [] -- not reachable
 ifApply p q env@(b:bs) 
     | expTrue p env = (((q,None):b):bs)
     | otherwise     = env
 
+-- iffElim
+-- p <-> q and p => q
+-- p <-> q and q => p
 iffApply :: Exp -> Exp -> Env -> Env
 iffApply p q env = ifApply p q (ifApply q p env)
 notApply :: Exp -> Env -> Env
@@ -171,6 +184,15 @@ notApply (UnApp Not exp) env@(b:bs)
     | expTrue exp env = ((TF "False", None):b):bs
     | otherwise       = env  
 
+-- falseElim
+--     ass  not p
+--     ... 
+--     False
+-- p
+--     ass p
+--     ...
+--     False
+-- not p
 
 falseElim :: Env -> Env
 falseElim env@(a:b:bs) 

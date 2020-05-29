@@ -3,7 +3,10 @@ module Parser where
 import Types
 import Helper
 import Data.Maybe
+
+comsList:: [(String, Command)]
 comsList = [("given", Given), ("ass", Ass) , ("const", Const)]
+boolList :: [String]
 boolList = ["True", "False"]
 precedence :: [(String, Int)]
 precedence = [("not", 1), ("and", 2), ("or", 3), ("->", 4), ("<->", 5), ("forall", 6), ("thereExists", 7), ("(", 8)]
@@ -28,39 +31,39 @@ parse words
     parse' [";"] [] _ _     = Nothing
     parse' [";"] expStack (o:os) coms = if (isNothing w) then Nothing
                                         else parse' [";"] (fromJust w) os coms 
-	where 
-	w = workoutExp expStack o
+        where 
+        w = workoutExp expStack o
     parse' [_] _ _ _ = Nothing
     parse' ("(" :xs) expStack opStack coms 
         = parse' xs expStack ("(":opStack) coms
     parse' (")" : xs) expStack [] _ = Nothing
-    parse' (")"	: xs) expStack (o : os) coms
+    parse' (")" : xs) expStack (o : os) coms
         | o == "(" = parse' xs expStack os coms
         | otherwise = if isNothing w
                       then Nothing
                       else parse' (")":xs) (fromJust w) os coms
-	where
-	w = workoutExp expStack o
+        where
+        w = workoutExp expStack o
     
     parse' (x : xs) expStack [] coms 
         | keyExists x precedence = parse' xs expStack [x] coms
         | keyExists x comsList && null coms && null expStack = parse' xs expStack [] [com]
         | keyExists x comsList         = Nothing
-	| elem x boolList              = parse' xs ((TF x):expStack) [] coms
+        | elem x boolList              = parse' xs ((TF x):expStack) [] coms
         | otherwise                    = parse' xs ((Var x):expStack) [] coms
         where 
         com = lookUp x comsList
     parse' (x : xs) expStack ops@(o : os) coms
-        | keyExists x precedence = if (lookUp x precedence <= lookUp o precedence && o /= "(")
+        | keyExists x precedence = if (lookUp x precedence > lookUp o precedence && o /= "(")
                                   then if (isNothing w) then Nothing
                                        else parse' (x:xs) (fromJust w) os coms
                                   else parse' xs expStack (x:ops) coms
         | keyExists x comsList              = Nothing
         | elem x boolList              = parse' xs ((TF x):expStack) ops coms
-        | otherwise                    = parse' xs ((Var x):expStack) ops coms	
+        | otherwise                    = parse' xs ((Var x):expStack) ops coms
         where
         w = workoutExp expStack o 
-	com = lookUp x comsList
+        com = lookUp x comsList
 
 parseLines :: [[String]] -> Maybe [(Exp, Command)]
 parseLines lines 

@@ -3,19 +3,18 @@ import Helper
 import Types
 import Rules
 import Data.Maybe
-successMsg = "Well done, proof is correct"
-constErrMsg = "Constant not in correct format" 
-verify :: [(Exp, Command)] -> Maybe Env
+
+-- verifies proof and returns the list of expressions given and those deduced
+-- returns Nothing if the proof is invalid 
+verify :: [(Exp, Command)] -> Maybe [Exp]
 verify input 
     = verify' input []
     where 
-    verify' :: [(Exp, Command)] -> Env -> Maybe Env
-    verify' [] env = Just env
---    verify' :: [(Exp, Command)] -> Env -> Maybe [Exp]
---    verify' [] env 
---        = Just (getKeys b)
---        where
---        (b:bs) = reverse env  
+    verify' :: [(Exp, Command)] -> Env -> Maybe [Exp]
+    verify' [] env 
+        = Just (getKeys b)
+        where
+        (b:bs) = reverse env  
     verify' ((exp, Given):es) []  = verify' es (applyRule exp [[(exp, Given)]])
     verify' ((exp, Given):es) env = verify' es env''
         where 
@@ -72,7 +71,7 @@ checkRule exp env@(b:bs)
     cond = keyExists (TF "False") b
     cond' = keyExists (UnApp Not exp) b
     res = checkRule' exp env
-    cond'' = isJust res 
+    cond'' = isJust res -- the rule holds 
     checkRule' :: Exp -> Env -> Maybe Env 
     checkRule' (BinApp And e1 e2) env      = andIntro e1 e2 env   
     checkRule' (BinApp Or e1 e2) env       = orIntro e1 e2 env
@@ -81,6 +80,8 @@ checkRule exp env@(b:bs)
     checkRule' (BinApp Iff e1 e2) env      = iffIntro e1 e2 env
     checkRule' _ env                       = Nothing
 
+-- for input p, checks for expressions such that p -> q
+-- and adds them t the environment
 ifCheck :: Exp -> Env -> Env
 ifCheck e@(BinApp And e1 e2) env
     = addToEnv env ifs
@@ -89,7 +90,8 @@ ifCheck e@(BinApp And e1 e2) env
 ifCheck e env
      = addToEnv env (findIfs e env) 
 
-
+-- for input p, checks for (not p) for false introduction
+-- also adds expressions such that p -> q to the environment
 notIfCheck :: Exp -> Env -> Env
 notIfCheck e@(BinApp And e1 e2) env@(b:bs)
     | cond      = ifCheck e env
