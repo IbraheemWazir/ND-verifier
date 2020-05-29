@@ -1,1 +1,4 @@
-Tests
+Tests/
+.o
+.hi
+!Main.o
